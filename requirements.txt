@@ -1,5 +1,6 @@
-stramlit
+streamlit
+pypdf
 sentence-transformers
-faiss
+faiss-cpu
 groq
 numpy
