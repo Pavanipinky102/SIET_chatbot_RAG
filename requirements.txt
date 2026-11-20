@@ -1,0 +1,5 @@
+stramlit
+sentence-transformers
+faiss
+groq
+numpy
