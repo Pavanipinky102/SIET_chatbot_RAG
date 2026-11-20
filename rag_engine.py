@@ -1,12 +1,12 @@
 import faiss
 import numpy as np
 from groq import Groq
-from pypdf import PDFReader
+from pypdf import pdfReader
 from sentence_transformers import SentenceTransFormer
 
 #load pdfs
 def load_pdf (pdf_path):
-  reader = PDFReaders(str(pdf_path))
+  reader = pdfReaders(str(pdf_path))
   mypages = [ i.extract_text() or "" for i in reader.pages]
   full_text = "\n".join(mypages).strip()
   if not full_text:
@@ -14,7 +14,7 @@ def load_pdf (pdf_path):
   return full_text
 
 #chunking
-def create_chunks(full_text,chunksize = 500, overlap=100):
+def create_chunks(full_text, chunksize = 500, overlap=100):
   chunk = []
   start = 0
   while start<len(full_text):
@@ -25,7 +25,7 @@ def create_chunks(full_text,chunksize = 500, overlap=100):
     start = end - overlap
   return chunks
 #$Embedding:
-def build_vectors(chunks, model_name = "all-MiniLM-L6-v2"):
+def build_vectors (chunks, model_name = "all-MiniLM-L6-v2"):
   if not chunks:
     raise ValueError("Cannot apply embedding without chunks")
   embed_model = SentenceTransformer(model_name)
@@ -53,14 +53,15 @@ def build_vectors(chunks, model_name = "all-MiniLM-L6-v2"):
         sim_scores, vec_indices = index.search(query_embed, min(num_chunks, len(chunks)))
         background = ""
         for i in vec_indices[0]:
-          background += chunks[i] + "\n\n"
-          return background
+          if i != -1:
+            background += chunks[i] + "\n\n"
+        return background
 
 #Ask:
-def ask_rag (question,embed_model, chunks, index, api_key, num_chunks, model_name = "openai/gpt-oss-120b"):
+def ask_rag (question,embed_model, chunks, index, api_key, num_chunks=3, model_name = "openai/gpt-oss-120b"):
   key = api_key
   if not key:
-    raise ValueError_content("API Key missing")
+    raise ValueError_content("API Key Missing")
     background = reterieve_content(question, embed_model, chunks, index, num_chunks=3)
     prompt = """You are an professional AI Assitant.
     Answer user question using ONLY document background below.
@@ -70,8 +71,8 @@ def ask_rag (question,embed_model, chunks, index, api_key, num_chunks, model_nam
     clint = Groq(api_key = key)
     response = client.chat.completions.create(
       model = model_name,
-      messages = [{"role" : "user",
-                   "content" :prompt}]
+      messages = [ {"role" : "user",
+                   "content" : prompt}],
       temperature =0.3,
     )
     return response.choice[0].message.content
